@@ -19,10 +19,10 @@ VILLAVERDE, KARL M.
 #define NOTE_A5 880
 #define rest 10
 
-Servo p;
+Servo Trap;
 
 long timestamp;
-int numRand, hardClue1 = 0, hardClue2 = 0, seconds = 0, minutes = 0, prevsec=0, prevmin=0;
+int numRand, hardClue1 = 0, hardClue2 = 0, seconds = 0, minutes = 0, prevsec = 0, prevmin = 0;
 String category = "";
 unsigned long timecount;
 
@@ -59,19 +59,23 @@ byte downkeys[] = {
 };
 
 // LIST OF  WORDS OF EASY LEVEL
-String EasyWords[60] = {
-  "DIODE", "CAPACITOR", "RESISTOR", "SWITCHES", "FUSE", "TRANSISTOR", "BATTERY", "SENSOR", "DIAC", "TRIAC",  // COMPONENTS
-  "SETUP", "LOOP", "ARRAY", "PINMODE", "DIGITALREAD", "DELAY", "BYTE", "LONG", "DIGITALWRITE", "VARIABLES",  // CODES
-  "COMPUTER", "RADIO", "IRON", "AMPLIFIER", "LAPTOP", "SCANNER", "CAMERA", "SPEAKER", "TIMER", "PRINTER",    //DEVICES
-  "OHMS", "VOLTS", "WATTS", "AMPERE", "HERTZ", "FARAD", "MHO", "PPM", "JOULE", "LUMEN",                      // UNITS
+String EasyWords[] = {
+  "ICECREAM", "KIMBAP", "CARBONARA", "SASHIMI", " FRIES", "KIMCHI", "PIZZA", "BURGER", "RAMEN", "CAKE",               // FOOD
+  "MIRROR", "BOTTLE", "CLOCK", "PAINT", "SCISSORS", "SHOE", "WHEEL", "GLASSES", "BATTERY", "ERASER",                  // THINGS
+  "COMPUTER", "RADIO", "IRON", "AMPLIFIER", "LAPTOP", "SCANNER", "CAMERA", "SPEAKER", "TIMER", "PRINTER",             //DEVICES
+  "BRAZIL", "CANADA", "CHINA", "CUBA", "FRANCE", "IRAN", "ITALY", "LAOS", "PERU", "SPAIN",                            // COUNTRIES
+  "BEAR", "ALIGATOR", "CHEETAH", "DEER", "ELEPHANT", "FOX", "GIRAFFE", "JAGUAR", "LION", "TIGER",                     //ANIMALS
+  "BADMINTON", "BASEBALL", "BOWLING", "SWIMMING", "FOOTBALL", "GOLF", "BASKETBALL", "SOCCER", "TENNIS", "VOLLEYBALL"  //SPORTS
 };
 
 // LIST OF  WORDS OF HARD LEVEL
-String HardWords[60] = {
-  "SERVO MOTOR", "THYRISTOR", "TRANSFORMER", "ZENER DIODE", "TOGGLE SWITCH", "POTENTIOMETER", "DC MOTORS", "SEMICONDUCTOR", "REGULATOR", "SOLENOIDS",  // COMPONENTS
-  "FUNCTION", "STRING", "CHAR", "MILLIS", "ANALOGPIN", "STRUCTURE", "ANALOGREAD", "CURLY BRACES", "DATATYPES", "COMMENTS",                             // CODES
-  "STOPWATCH", "TELEVISION", "SMARTPHONE", "MICROPHONE", "PROJECTOR", "MICROWAVE", "REFRIGERATOR", "WEBCAM", "DASHCAM", "CCTV",                        //DEVICES
-  "DECIBEL", "PASCAL", "COULOMB", "HENRY", "TESLA", "CANDELA", "GAUSS", "NEWTON", "ECQUEREL", "WEBER"                                                  //UNITS
+String HardWords[] = {
+  "QUESADILLA", "BROCCOLI", "BUCKWHEAT", "PANCAKES", "SPARERIBS", " SPAGHETTI", "RAVIOLI", "SAUSAGE", "STEAK", "TAKOYAKI",       // FOOD
+  "CALCULATOR", "POPSICLE", "TELESCOPE", "AQUARIUM", "BICYCLE", "TEAPOT", "GRENADE", "TORCH", "DOMINOES", "WHISK",    // THINGS
+  "STOPWATCH", "TELEVISION", "SMARTPHONE", "MICROPHONE", "PROJECTOR", "MICROWAVE", "REFRIGERATOR", "WEBCAM", "DASHCAM", "CCTV",  // DEVICES
+  "AUSTRALIA", "CAMBODIA", "ECUADOR", "GERMANY", "IRELAND", "MALDIVES", "PORTUGAL", "THAILAND", "UKRAINE", "VIETNAM",            // COUNTRIES
+  "HIPPO", "MONKEY", "OTTER", "WOLF", "YAK", "ZEBRA", "RABBIT", "PENGUIN", "SHARK", "KANGAROO",                                  //ANIMALS
+  "RUGBY", "FENCING", "HOCKEY", "SKIING", "SNOWBOARDING", "WRESTLING", "LACROSSE", "ROWING", "SWIMMING", "DODGEBALL"             //SPORTS
 };
 
 int notes[] = {
@@ -145,13 +149,16 @@ int durations[] = {
 String Hashwords = "";  // memory of encrypted random word
 String words = "";      //memory of the random word
 
-int life = 3;              //life of the player
-int light = 24;            // for the light pin
-const int up = 2;          // for the up button
-const int down = 3;        // for the down button
-const int enter = 4;       // for the enter button
-const int servoPin = 5;    // for the servo pin
-const int speakerPin = 6;  // for the speaker pin
+int life = 3;               //life of the player
+int light = 24;             // for the light pin
+const int up = 2;           // for the up button
+const int down = 3;         // for the down button
+const int enter = 4;        // for the enter button
+const int servoPin = 5;     // for the servo pin
+const int speakerPin = 6;   // for the speaker pin
+const int buzzPin = 7;      // for the buzzer pin
+const int lightRight = 26;  // for the spotlight right
+const int lightLeft = 27;   // for the spotlight left
 
 LiquidCrystal_I2C lcd(0x27, 0, 4);
 
@@ -159,7 +166,7 @@ LiquidCrystal_I2C lcd(0x27, 0, 4);
 void setup() {
   // Setup Servo
   Trap.attach(servoPin);
-  Trap.write(90);
+  Trap.write(99);
 
 
   // Clue setup
@@ -173,9 +180,16 @@ void setup() {
   pinMode(down, INPUT_PULLUP);
   pinMode(enter, INPUT_PULLUP);
   pinMode(speakerPin, OUTPUT);
+  pinMode(buzzPin, OUTPUT);
+  pinMode(lightLeft, OUTPUT);
+  pinMode(lightRight, OUTPUT);
+
   for (int x = 22; x <= light; x++) {
     pinMode(x, OUTPUT);
     digitalWrite(x, HIGH);
+  }
+  for (int x = 42; x <= 54; x++) {
+    pinMode(x, OUTPUT);
   }
 
   // Lcd set-up
@@ -199,13 +213,60 @@ void setup() {
   lcd.clear();
   play();
 }
-
-
+void spotLight() {
+  digitalWrite(lightRight, HIGH);
+  delay(100);
+  digitalWrite(lightRight, LOW);
+  digitalWrite(lightLeft, HIGH);
+  delay(100);
+  digitalWrite(lightLeft, LOW);
+  delay(50);
+  digitalWrite(lightRight, HIGH);
+  digitalWrite(lightLeft, HIGH);
+  delay(100);
+  digitalWrite(lightRight, LOW);
+  digitalWrite(lightLeft, LOW);
+  digitalWrite(lightRight, HIGH);
+  digitalWrite(lightLeft, HIGH);
+  delay(100);
+  digitalWrite(lightRight, LOW);
+  digitalWrite(lightLeft, LOW);
+  digitalWrite(lightRight, HIGH);
+  digitalWrite(lightLeft, HIGH);
+  delay(100);
+  digitalWrite(lightRight, LOW);
+  digitalWrite(lightLeft, LOW);
+}
+// function that will generates a light effect when called
+void lightEffects(int num) {
+  if (num == 1) {
+    for (int x = 42; x <= 54; x++) {
+      digitalWrite(x, HIGH);
+      delay(5);
+      digitalWrite(x, LOW);
+      delay(5);
+    }
+    for (int x = 54; x >= 42; x--) {
+      digitalWrite(x, HIGH);
+      delay(5);
+      digitalWrite(x, LOW);
+      delay(5);
+    }
+  } else if (num == 2) {
+    for (int x = 42; x <= 54; x++) {
+      digitalWrite(x, HIGH);
+    }
+  } else if (num == 3) {
+    for (int x = 42; x <= 54; x++) {
+      digitalWrite(x, LOW);
+    }
+  }
+}
 // function that will generates a sounds every time user will select a button
 void clickEffects() {
-  digitalWrite(speakerPin, HIGH);
+  digitalWrite(buzzPin, HIGH);
   delay(100);
-  digitalWrite(speakerPin, LOW);
+  digitalWrite(buzzPin, LOW);
 }
 
 //function that would let user choice a level of difficulty
@@ -263,6 +324,8 @@ void intro() {
     lcd.print("EASY " + line1);
     lcd.setCursor(0, 2);
     lcd.print("HARD " + line2);
+    lightEffects(1);
+    spotLight();
     delay(50);
   } while (parLevel == false);
   encrypt(numSelect);
@@ -285,12 +348,24 @@ void start() {
     lcd.print(" IN ");
     lcd.print(i);
     lcd.print(" SECONDS");
+    lightEffects(1);
     clickEffects();
-    delay(1000);
+    digitalWrite(lightLeft, HIGH);
+    digitalWrite(lightRight, LOW);
+    lightEffects(2);    
+    delay(500);
+    lightEffects(3);
+    digitalWrite(lightLeft, LOW);
+    digitalWrite(lightRight, HIGH);
+    delay(500);
   }
-  digitalWrite(speakerPin, HIGH);
+  digitalWrite(buzzPin, HIGH);
+  digitalWrite(lightLeft, HIGH);
+  digitalWrite(lightRight, HIGH);
+  lightEffects(2);
   delay(300);
-  digitalWrite(speakerPin, LOW);
+  lightEffects(3);
+  digitalWrite(buzzPin, LOW);
   delay(1000);
   lcd.clear();
   do {
@@ -303,12 +378,13 @@ void start() {
       }
       if (currentNote != 0) {
         tone(speakerPin, notes[i] - 25, wait);
+        digitalWrite(buzzPin, LOW);
       } else {
         noTone(speakerPin);
       }
 
       timecount = millis();
-      if (timecount - timestamp > 1000) {
+      if (timecount - timestamp >= 1000) {
         timestamp = timecount;
         seconds += 1;
         if (seconds >= 60) {
@@ -335,13 +411,17 @@ void start() {
       lcd.print("CATEGORY: ");
       lcd.print(category);
       if (numRand >= -1 && numRand <= 9) {
-        category = "COMPONENTS";
+        category = "FOOD";
       } else if (numRand >= 10 && numRand <= 19) {
-        category = "CODES";
+        category = "THINGS";
       } else if (numRand >= 20 && numRand <= 29) {
         category = "DEVICES";
       } else if (numRand >= 30 && numRand <= 39) {
-        category = "UNITS";
+        category = "COUNTRIES";
+      } else if (numRand >= 40 && numRand <= 49) {
+        category = "ANIMALS";
+      } else if (numRand >= 50 && numRand <= 59) {
+        category = "SPORTS";
       }
 
       if (digitalRead(up) == HIGH && numLetter < 91) {
@@ -368,6 +448,7 @@ void start() {
         for (int i = 0; i < words.length(); i++) {
           if (Letter == words[i]) {
             Hashwords[i] = Letter;
+            lightEffects(1);
           } else {
             error++;
           }
@@ -376,10 +457,13 @@ void start() {
         if (words == Hashwords) {
           lcd.setCursor(0, 2);
           lcd.print(words);
-          if (minutes <= prevmin && seconds <= prevsec || prevmin == 0 &&  prevsec==0 || minutes == prevmin && seconds <= prevsec) {
+          if (minutes <= prevmin && seconds <= prevsec || prevmin == 0 && prevsec == 0 || minutes == prevmin && seconds <= prevsec) {
             prevsec = seconds;
             prevmin = minutes;
             lcd.setCursor(0, 3);
+            lightEffects(1);
+            delay(300);
+            lightEffects(1);
             lcd.print("YOU ARE THE FASTEST!");
           }
           delay(3000);
@@ -467,6 +551,15 @@ void winner() {
     }
     x++;
     if (x == 6) {
+      lightEffects(1);
+      spotLight();
+      lightEffects(2);
+      spotLight();
+      lightEffects(3);
+      spotLight();
+      lightEffects(1);
+      spotLight();
+      lightEffects(1);
       lcd.clear();
       menu();
     }
@@ -479,10 +572,6 @@ void fail() {
   bool servoCheck = false;
   int x = 0;
   do {
-    if (servoCheck == false) {
-      Trap.write(180);
-      servoCheck = true;
-    }
     lcd.clear();
     for (int y = 0; y != 2; y++) {
       lcd.clear();
@@ -502,8 +591,20 @@ void fail() {
     }
     x++;
     if (x == 7) {
-      lcd.clear();
-      menu();
+      if (servoCheck == false) {
+        Trap.write(180);
+        servoCheck = true;
+        spotLight();
+        lightEffects(1);
+        spotLight();
+        lightEffects(2);
+        spotLight();
+        lightEffects(3);
+        spotLight();
+        lightEffects(1);
+        lcd.clear();
+        menu();
+      }
     }
   } while (true);
 }
@@ -533,21 +634,30 @@ void menu() {
       int durationend = 1000 / durationsend[thisNote];
       tone(6, melodyend[thisNote], durationend);
       int pause = durationend * 1.3;
-      delay(pause);
+      digitalWrite(lightRight, HIGH);
+      digitalWrite(lightLeft, HIGH);
+      delay(pause / 2);
+      digitalWrite(lightRight, LOW);
+      digitalWrite(lightLeft, LOW);
+      delay(pause / 2);
       noTone(8);
       if (digitalRead(enter) == HIGH && numSelect == 0) {
         con = false;
         numRand;
+        minutes=0;
+        seconds=0;
         hardClue1 = 0;
         hardClue2 = 0;
         category = "";
         Hashwords = "";
         words = "";
         life = 3;
+        delay(1500);
         setup();
         loop();
       }
       if (digitalRead(enter) == HIGH && numSelect == 1) {
+        delay(1500);
         lcd.clear();
         lcd.setCursor(1, 1);
         lcd.print("THANKS FOR PLAYING");
@@ -667,6 +777,8 @@ void play() {
     for (int i = 0; i < totalNotes; i++) {
       numRand = random(40);
       const int currentNote = notes[i];
+      digitalWrite(lightLeft, HIGH);
+      digitalWrite(lightRight, HIGH);
       if (i <= 20) {
         wait = durations[i] / 1.5;
       } else {
@@ -678,12 +790,33 @@ void play() {
         noTone(speakerPin);
       }
       if (digitalRead(enter) == HIGH) {
+        spotLight();
         sound = false;
+        lightEffects(1);
+        digitalWrite(lightLeft, HIGH);
+        digitalWrite(lightRight, HIGH);
+        delay(10);
+        digitalWrite(lightLeft, LOW);
+        digitalWrite(lightRight, LOW);
+        lightEffects(1);
+        digitalWrite(lightLeft, HIGH);
+        digitalWrite(lightRight, HIGH);
+        delay(10);
+        digitalWrite(lightLeft, LOW);
+        digitalWrite(lightRight, LOW);
+        lightEffects(1);
+        digitalWrite(lightLeft, HIGH);
+        digitalWrite(lightRight, HIGH);
+        delay(10);
+        spotLight();
         delay(750);
         lcd.clear();
         break;
       }
-      delay(wait);
+      delay(wait / 2);
+      digitalWrite(lightLeft, LOW);
+      digitalWrite(lightRight, LOW);
+      delay(wait / 2);
     }
   } while (sound == true);
 }
